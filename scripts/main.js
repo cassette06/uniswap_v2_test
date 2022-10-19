@@ -40,14 +40,14 @@ async function main() {
   const router_contract = await getRouterContract(wallet);
   console.log(await router_contract.factory());
   //往cat-dog pool里添加流动性
-
+  const factory_address = "0x713bf2f97E99AB5DC44ee45697Ac4e7Ef40c0847";
   const token_cat_address = "0xF282eE8EC1565bA6410356a370802aCf060b461E";
   const token_dog_address = "0xdC0eE72fE978E0Db8e5361De8125b83C30249e0d";
 
   const add_liquidity_tx_request = {
     gasLimit: 9999999,
     // value: BigNumber.from(10).pow(17),
-    gasPrice: await provider.getGasPrice(),
+    gasPrice: (await provider.getGasPrice()).mul(6),
   };
 
   let amountCatDesired = BigNumber.from(10).pow(18);
@@ -57,20 +57,83 @@ async function main() {
   let to = await wallet.getAddress();
   const deadline = 1667140456; // "2022-10-30 22:34:16"
   console.log("++++");
-  const add_liquidity_tx_receipt = await add_liquidity(
-    router_contract,
-    token_cat_address,
-    token_dog_address,
-    amountCatDesired,
+  // const add_liquidity_tx_receipt = await add_liquidity(
+  //   router_contract,
+  //   token_cat_address,
+  //   token_dog_address,
+  //   amountCatDesired,
 
-    amountDogDesired,
-    amountCatMin,
-    amountDogMin,
-    to,
-    deadline,
-    add_liquidity_tx_request
+  //   amountDogDesired,
+  //   amountCatMin,
+  //   amountDogMin,
+  //   to,
+  //   deadline,
+  //   add_liquidity_tx_request
+  // );
+  // console.log(add_liquidity_tx_receipt);
+
+  //部署exampleonoraclesimple合约
+  //deploy oracle
+  // const oracle_contract = await deployfun.example_oracle_deploy(
+  //   wallet,
+  //   factory_address,
+  //   token_cat_address,
+  //   token_dog_address
+  // );
+  //oracle合约地址：0x4f2D189303AC4D2D153247eBBCcd42cDA68446e2
+  //获取oracle合约
+  const oracle_contract = await getOracleContract(wallet);
+  const oracleUpdateResponse = await oracle_contract.update();
+  await oracleUpdateResponse.wait(6);
+  const amountOutConsult = await oracle_contract.consult(
+    token_dog_address,
+    20000
   );
-  console.log(add_liquidity_tx_receipt);
+  console.log(amountOutConsult);
+  //部署slide oracle合约
+  // let window_size = 1800; //30分钟
+  // let granularity = 3; //每十分钟一次更新
+  // const slide_contract = await deployfun.slide_oracle_deploy(
+  //   wallet,
+  //   factory_address,
+  //   window_size,
+  //   granularity
+  // );
+  //获取slide oracle合约
+  const slide_contract = await getSlideOracleContract(wallet);
+  // const oracleUpdateResponse = await slide_contract.update(
+  //   token_cat_address,
+  //   token_dog_address
+  // );
+  // await oracleUpdateResponse.wait(6);
+  // const amountOutConsult = await slide_contract.consult(
+  //   token_dog_address,
+  //   20000,
+  //   token_cat_address
+  // );
+  // console.log(amountOutConsult);
+  //部署swaptoprice合约
+  // let router_address = "0x456a897f0e03Fe180920Aa76DADb2a24BD226aC9";
+  // const swaptoprice_contract = await deployfun.swaptoprice_deploy(
+  //   wallet,
+  //   factory_address,
+  //   router_address
+  // );
+  //swaptoprice合约地址：0x6d5E036365584c63E0Cb29e26221A6C38832c235
+  //获取swaptoprice合约
+  const swaptoprice_contract = await getSwaptopriceContract(wallet);
+
+  // const swaptoprice_response = await swaptoprice_contract.swapToPrice(
+  //   token_cat_address,
+  //   token_dog_address,
+  //   1,
+  //   4,
+  //   BigNumber.from(2).mul(10).pow(18),
+  //   BigNumber.from(2).mul(10).pow(18),
+  //   wallet.address,
+  //   deadline
+  // );
+  // await swaptoprice_response.wait(2);
 }
 
 //添加流动性
@@ -115,17 +178,50 @@ async function getRouterContract(wallet) {
   );
   // router_contract.connect(wallet)
   return router_contract;
-
-  //   let contract_address = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"
-  //   let contract_abi = UniswapV2Router02_abi
-  //   let router_contract = new ethers.Contract(
-  //       contract_address,
-  //       contract_abi,
-  //       wallet //signer
-  //   )
-  //   // router_contract.connect(wallet)
-  //   return router_contract
 }
+//获取oracle合约
+async function getOracleContract(wallet) {
+  let contract_address = "0x4f2D189303AC4D2D153247eBBCcd42cDA68446e2";
+  let oracle_contract = new ethers.Contract(
+    contract_address,
+    abifile.oracleabi,
+    wallet //signer
+  );
+  // router_contract.connect(wallet)
+  return oracle_contract;
+}
+//获取slide oracle合约
+async function getSlideOracleContract(wallet) {
+  let contract_address = "0xF74C852600893899a9959673c6d7fb208104eb7a";
+  let slide_contract = new ethers.Contract(
+    contract_address,
+    abifile.slideabi,
+    wallet //signer
+  );
+  // router_contract.connect(wallet)
+  return slide_contract;
+}
+//获取 swaptoprice合约
+async function getSwaptopriceContract(wallet) {
+  let contract_address = "0x6d5E036365584c63E0Cb29e26221A6C38832c235";
+  let swaptoprice_contract = new ethers.Contract(
+    contract_address,
+    abifile.swaptopriceabi,
+    wallet //signer
+  );
+  // router_contract.connect(wallet)
+  return swaptoprice_contract;
+}
+
+//   let contract_address = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"
+//   let contract_abi = UniswapV2Router02_abi
+//   let router_contract = new ethers.Contract(
+//       contract_address,
+//       contract_abi,
+//       wallet //signer
+//   )
+//   // router_contract.connect(wallet)
+//   return router_contract
 
 async function setup() {
   //goerli测试网，走这个

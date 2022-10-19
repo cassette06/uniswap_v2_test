@@ -75,6 +75,84 @@ async function token_dog_deploy(singner) {
   }
   return syn_contract;
 }
+//exampleOracle部署
+
+async function example_oracle_deploy(
+  singner,
+  factory_address,
+  token_a_address,
+  token_b_address
+) {
+  const OracleFactory = await ethers.getContractFactory(
+    "ExampleOracleSimple",
+    singner
+  );
+  console.log("Deploying contract...");
+
+  const syn_contract = await OracleFactory.deploy(
+    factory_address,
+    token_a_address,
+    token_b_address
+  );
+  await syn_contract.deployed();
+  console.log(`Deployed oracle contract to: ${syn_contract.address}`);
+  // what happens when we deploy to our hardhat network?
+  if (network.config.chainId === 5 && process.env.ETHERSCAN_API_KEY) {
+    console.log("Waiting for block confirmations...");
+    await syn_contract.deployTransaction.wait(6);
+  }
+  return syn_contract;
+}
+//slideOracle部署
+
+async function slide_oracle_deploy(
+  singner,
+  factory_address,
+  window_size,
+  granularity
+) {
+  const SlideFactory = await ethers.getContractFactory(
+    "ExampleSlidingWindowOracle",
+    singner
+  );
+  console.log("Deploying contract...");
+
+  const syn_contract = await SlideFactory.deploy(
+    factory_address,
+    window_size,
+    granularity
+  );
+  await syn_contract.deployed();
+  console.log(`Deployed slide oracle contract to: ${syn_contract.address}`);
+  // what happens when we deploy to our hardhat network?
+  if (network.config.chainId === 5 && process.env.ETHERSCAN_API_KEY) {
+    console.log("Waiting for block confirmations...");
+    await syn_contract.deployTransaction.wait(6);
+  }
+  return syn_contract;
+}
+//swaptoprice部署
+
+async function swaptoprice_deploy(singner, factory_address, router_address) {
+  const swaptopriceFactory = await ethers.getContractFactory(
+    "ExampleSwapToPrice",
+    singner
+  );
+  console.log("Deploying contract...");
+
+  const syn_contract = await swaptopriceFactory.deploy(
+    factory_address,
+    router_address
+  );
+  await syn_contract.deployed();
+  console.log(`Deployed swaptoprice contract to: ${syn_contract.address}`);
+  // what happens when we deploy to our hardhat network?
+  if (network.config.chainId === 5 && process.env.ETHERSCAN_API_KEY) {
+    console.log("Waiting for block confirmations...");
+    await syn_contract.deployTransaction.wait(6);
+  }
+  return syn_contract;
+}
 
 // async function verify(contractAddress, args) {
 const verify = async (contractAddress, args) => {
@@ -98,4 +176,7 @@ module.exports = {
   router_deploy,
   token_cat_deploy,
   token_dog_deploy,
+  example_oracle_deploy,
+  slide_oracle_deploy,
+  swaptoprice_deploy,
 };
